@@ -19,29 +19,30 @@ $(window).load(function() {
 function main(){
   d3.json("datasets.json", function(error, json){
     for (var i in json){
-      var id = json[i].user.concat(json[i].task);
-      datasets[id] = json[i].fixpoints;
-      addButtonToTrialView(id);
+      var trial_id = json[i].user.concat(json[i].task);
+      datasets[trial_id] = json[i].fixpoints;
+      addButtonToTrialView(trial_id);
     }
     drawMainView();
   })
 }
 
-function addButtonToTrialView(id){  
+function addButtonToTrialView(trial_id){  
   d3.select("#user-group")
     .append("button")
-    .attr("type", "button")
-    .attr("id", id)
-    .attr("class", "btn btn-primary")
-    .attr("autocomplete","off")
-    .text(id);
+      .attr("type", "button")
+      .attr("id", trial_id)
+      .attr("class", "btn btn-primary")
+      .attr("autocomplete","off")
+      .text(trial_id);
 
-  $('#'.concat(id)).on('click', function () {
+  $('#'.concat(trial_id)).on('click', function () {
     if (!$(this).hasClass('active')){
-      drawFixationPoints(mainviewsvg, id);
-      // drawScanPath(mainviewsvg, datasets["user1task15"]);
+      drawFixationPoints(mainviewsvg, trial_id);
+      drawScanPath(mainviewsvg, trial_id);
     } else {
-      removeFixationPoints(mainviewsvg, "#".concat(id));
+      removeFixationPoints(mainviewsvg, "#".concat(trial_id));
+      removeScanPath(mainviewsvg, "#".concat(trial_id))
     }
   })
 }
@@ -50,8 +51,8 @@ function drawMainView(){
   // Create SVG element
   mainviewsvg = d3.select("#mainview")
               .append("svg")
-              .attr("width", canvas_width)
-              .attr("height", canvas_height);
+                .attr("width", canvas_width)
+                .attr("height", canvas_height);
 
   // Add background image to the main view
   // Define the image as a pattern
@@ -74,12 +75,13 @@ function drawMainView(){
     .attr('fill-opacity', mainview_bg_opacity);
 }
 
-function drawFixationPoints(svg, dataset_id){
+function drawFixationPoints(svg, trial_id){
   // Draw fixation points
   svg.append("g")
-      .attr("id", dataset_id)
+      .attr("class", "fixationpoints")
+      .attr("id", trial_id)
     .selectAll("circle")
-    .data(datasets[dataset_id])
+    .data(datasets[trial_id])
     .enter()
     .append("circle")
       .attr("cx", function(d) {
@@ -91,19 +93,25 @@ function drawFixationPoints(svg, dataset_id){
       .attr("r", 5);
 }
 
-function removeFixationPoints(svg, group_id){
-  svg.select(group_id).remove();
+function removeFixationPoints(svg, trial_id){
+  svg.select(".fixationpoints".concat(trial_id)).remove();
 }
 
-function drawScanPath(svg, dataset){
+function drawScanPath(svg, dataset_id){
   var scanpathFunction = d3.svg.line()
                          .x(function(d) { return zoom_ratio*d.x; })
                          .y(function(d) { return zoom_ratio*d.y; })
                          .interpolate("linear");
 
   svg.append("path")
-     .attr("d", scanpathFunction(dataset))
-     .attr("stroke", "blue")
-     .attr("stroke-width", 2)
-     .attr("fill", "none");
+    .attr("class", "scanpath")
+    .attr("id", dataset_id)
+    .attr("d", scanpathFunction(datasets[dataset_id]))
+    .attr("stroke", "blue")
+    .attr("stroke-width", 2)
+    .attr("fill", "none");
+}
+
+function removeScanPath(svg, trial_id){
+  svg.select(".scanpath".concat(trial_id)).remove();
 }
