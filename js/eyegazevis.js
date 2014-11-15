@@ -11,6 +11,9 @@ var mainview_bg_opacity = 0.5;
 
 var zoom_ratio = 0.7035; // image coordinate / fixation coordinate
 
+var fixation_point_radius = 2;
+var scanpath_width = 1;
+
 var fixpoints_group_class = "fixationpoints";
 var scanpath_class = "scanpath";
 
@@ -103,7 +106,7 @@ function drawFixationPoints(svg, trial_id){
       .attr("cy", function(d) {
         return zoom_ratio*d.y;
       })
-      .attr("r", 5);
+      .attr("r", fixation_point_radius);
 }
 
 function removeFixationPoints(svg, trial_id){
@@ -121,7 +124,7 @@ function drawScanPath(svg, dataset_id){
     .attr("id", dataset_id)
     .attr("d", scanpathFunction(datasets[dataset_id]))
     .attr("stroke", "blue")
-    .attr("stroke-width", 2)
+    .attr("stroke-width", scanpath_width)
     .attr("fill", "none");
 }
 
