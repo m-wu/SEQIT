@@ -40,7 +40,6 @@ function main(){
       var trial_id = json[i].user.concat(json[i].task);
       fixation_datasets[trial_id] = json[i].fixpoints;
 
-      // Add a button for the trial in the trial view.
       
     }    
     initializeViews()
@@ -59,6 +58,7 @@ function initializeViews(){
   }
 
   for(var trial_id in fixation_datasets){
+    // Add a button for the trial in the trial view.
     addButtonToTrialView(trial_id);
   }
   populateTimelineData();
@@ -168,9 +168,6 @@ function drawTimelineView(){
                         .attr("width", canvas_width)
                         .attr("height", timeline_height);
   
-
-  var timespan = aoi_sequences[aoi_sequences.length-1].end - aoi_sequences[0].start
-
   var xScale = d3.scale.linear()
       .domain([0, d3.max(aoi_sequences, function(s){ return s[s.length-1].end;})])
       .range([0, canvas_width]);
