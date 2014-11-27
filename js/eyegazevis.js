@@ -18,6 +18,7 @@ var scanpath_width        = 1;
 
 var fixpoints_group_class = "fixationpoints";
 var scanpath_class        = "scanpath";
+var timeline_class        = "timeline";
 
 var numFilesLoaded        = 0;
 var numFilesToLoad        = 2;
@@ -32,22 +33,17 @@ function main(){
   drawMainView();
   // read the JSON data file
   d3.json("fixation_datasets.json", function(error, json){
-    fixation_datasets = {};
+    fixation_datasets = [];
     for (var i in json){
       // Add the list of fixation points into fixation_datasets
-      // with trial_id as the index.
-      // trial_id contains user id and task id.
-      var trial_id = json[i].user.concat(json[i].task);
-      fixation_datasets[trial_id] = json[i].fixpoints;
-
-      
-    }    
-    initializeViews()
+      fixation_datasets.push({user:json[i].user, task:json[i].task, fixations:json[i].fixpoints});
+    }
+    initializeViews();
   });
 
   d3.tsv("atuav2.tsv", function(error, rows) {
     aois = rows;
-    initializeViews()
+    initializeViews();
   });
 
 }
@@ -57,17 +53,23 @@ function initializeViews(){
     return; // wait for files to load
   }
 
-  for(var trial_id in fixation_datasets){
+  for(var i in fixation_datasets){
     // Add a button for the trial in the trial view.
-    addButtonToTrialView(trial_id);
+    var trial = fixation_datasets[i];
+    addButtonToTrialView(trial.user, trial.task);
   }
   populateTimelineData();
+
+  drawAllFixationPoints();
+  drawAllScanPaths();
   drawTimelineView();
 }
 
 function populateTimelineData(){
-  for (trial_id in fixation_datasets){
-    aoi_sequences.push(getAOISequence(fixation_datasets[trial_id], aois));
+  for (var i in fixation_datasets){
+    var trial = fixation_datasets[i];
+    var aoisequence = getAOISequence(trial.fixations, aois);
+    aoi_sequences.push({user:trial.user, task:trial.task, sequence:aoisequence});
   }
 }
 
@@ -111,27 +113,24 @@ function isInsideRect(x, y, aoi){
 }
 
 
-function addButtonToTrialView(trial_id){  
+function addButtonToTrialView(user, task){  
   // Add a button in the trial view
   d3.select("#user-group")
     .append("button")
       .attr("type", "button")
-      .attr("id", trial_id)
-      .attr("class", "btn btn-primary")
+      .attr("class", ["btn", "btn-primary", user, task].join(" "))
       .attr("autocomplete","off")
-      .text(trial_id);
+      .text([user, task].join(" "))
+      .on('click', function () {
+        d3.selectAll("."+fixpoints_group_class+"."+user+"."+task)
+          .style("display", $(this).hasClass('active') ? "none" : null);
+        d3.selectAll("."+scanpath_class+"."+user+"."+task)
+          .style("display", $(this).hasClass('active') ? "none" : null);
+      })
+}
 
-  // Define the on-click action:
-  // show or hide fixation points and scan path.
-  $('#'.concat(trial_id)).on('click', function () {
-    if (!$(this).hasClass('active')){
-      drawFixationPoints(mainviewsvg, trial_id);
-      drawScanPath(mainviewsvg, trial_id);
-    } else {
-      removeFixationPoints(mainviewsvg, trial_id);
-      removeScanPath(mainviewsvg, trial_id);
-    }
-  })
+function getTrialID(user, task){
+  return "user="+user+";task:"+task;
 }
 
 function drawMainView(){
@@ -160,6 +159,58 @@ function drawMainView(){
     .attr('width', mainview_width)
     .attr('height', mainview_height)
     .attr('fill-opacity', mainview_bg_opacity);
+
+  mainviewsvg.append("g")
+    .attr("class", fixpoints_group_class);
+
+  mainviewsvg.append("g")
+    .attr("class", scanpath_class);
+}
+
+function drawAllFixationPoints(){
+  mainviewsvg.select("."+fixpoints_group_class)
+    .selectAll("g")
+    .data(fixation_datasets)
+    .enter()
+  .append("g")
+    .attr("class", function(d){
+      return [fixpoints_group_class,d.user,d.task].join(" ");
+    })
+    .style("display","none")
+    .selectAll("circle")
+    .data(function(d){return d.fixations;})
+    .enter()
+  .append("circle")
+    .attr("cx", function(d) {
+        return zoom_ratio*d.x;
+      })
+      .attr("cy", function(d) {
+        return zoom_ratio*d.y;
+      })
+      .attr("r", fixation_point_radius);
+}
+
+function drawAllScanPaths(){
+  var scanpathFunction = d3.svg.line()
+                           .x(function(d) { return zoom_ratio*d.x; })
+                           .y(function(d) { return zoom_ratio*d.y; })
+                           .interpolate("linear");
+
+  mainviewsvg.select("."+scanpath_class)
+    .selectAll("path")
+    .data(fixation_datasets)
+    .enter()
+  .append("path")
+    .attr("class", function(d){
+      return [scanpath_class, d.user, d.task].join(" ");
+    })
+    .style("display","none")
+    .attr("d", function(d){
+      return scanpathFunction(d.fixations);
+    })
+    .attr("stroke", "blue")
+    .attr("stroke-width", scanpath_width)
+    .attr("fill", "none");
 }
 
 function drawTimelineView(){
@@ -169,7 +220,10 @@ function drawTimelineView(){
                         .attr("height", timeline_height);
   
   var xScale = d3.scale.linear()
-      .domain([0, d3.max(aoi_sequences, function(s){ return s[s.length-1].end;})])
+      .domain([0, d3.max(aoi_sequences, function(s){
+        var sequence = s.sequence;
+        return sequence[sequence.length-1].end;
+      })])
       .range([0, canvas_width]);
 
   var yScale = d3.scale.ordinal()
@@ -191,10 +245,13 @@ function drawTimelineView(){
       .data(aoi_sequences)
       .enter()
       .append("g")
+      .attr("class", function(d){
+        return [timeline_class, d.user, d.task].join(" ");
+      })
       .attr("transform", function(d,i){return "translate(0, "+yScale(i)+")";});
 
   var rects = groups.selectAll("rect")
-      .data(function(d) { return d; })
+      .data(function(d) { return d.sequence; })
       .enter()
       .append("rect")
       .attr("x", function(d){
@@ -210,45 +267,4 @@ function drawTimelineView(){
       })
       .on('mouseover', aoiTip.show)
       .on('mouseout', aoiTip.hide);
-}
-
-function drawFixationPoints(svg, trial_id){
-  // Draw fixation points
-  svg.append("g")
-      .attr("class", fixpoints_group_class)
-      .attr("id", trial_id)
-    .selectAll("circle")
-    .data(fixation_datasets[trial_id])
-    .enter()
-    .append("circle")
-      .attr("cx", function(d) {
-        return zoom_ratio*d.x;
-      })
-      .attr("cy", function(d) {
-        return zoom_ratio*d.y;
-      })
-      .attr("r", fixation_point_radius);
-}
-
-function removeFixationPoints(svg, trial_id){
-  svg.select(".".concat(fixpoints_group_class).concat("#".concat(trial_id))).remove();
-}
-
-function drawScanPath(svg, trial_id){
-  var scanpathFunction = d3.svg.line()
-                         .x(function(d) { return zoom_ratio*d.x; })
-                         .y(function(d) { return zoom_ratio*d.y; })
-                         .interpolate("linear");
-
-  svg.append("path")
-    .attr("class", scanpath_class)
-    .attr("id", trial_id)
-    .attr("d", scanpathFunction(fixation_datasets[trial_id]))
-    .attr("stroke", "blue")
-    .attr("stroke-width", scanpath_width)
-    .attr("fill", "none");
-}
-
-function removeScanPath(svg, trial_id){
-  svg.select(".".concat(scanpath_class).concat("#".concat(trial_id))).remove();
 }
