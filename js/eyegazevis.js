@@ -2,11 +2,8 @@ var fixation_datasets, aois, aoi_sequences = [];
 
 var mainviewsvg, timelineviewsvg;
 
-var canvas_width          = 900;
-var canvas_height         = 719;
-
-var mainview_width        = 900;
-var mainview_height       = 719;
+var mainview_img_width    = 900.0;
+var mainview_img_height   = 719.0;
 var mainview_bg_opacity   = 0.5;
 
 var timeline_height       = 100;
@@ -134,11 +131,16 @@ function getTrialID(user, task){
 }
 
 function drawMainView(){
+  var mainview_width = parseFloat(d3.select(".mainviewcolumn").style("width"));
+  var mainview_height = mainview_width * mainview_img_height / mainview_img_width;
+
+  zoom_ratio = zoom_ratio * (mainview_width/mainview_img_width);
+
   // Create SVG element
   mainviewsvg = d3.select("#mainview")
                   .append("svg")
-                    .attr("width", canvas_width)
-                    .attr("height", canvas_height);
+                    .attr("width", mainview_width)
+                    .attr("height", mainview_height);
 
   // Add background image to the main view
   // Define the image as a pattern
@@ -214,9 +216,11 @@ function drawAllScanPaths(){
 }
 
 function drawTimelineView(){
+  var timeline_width = parseInt(d3.select(".timelinecolumn").style("width"));
+
   timelineviewsvg = d3.select("#timelineview")
                       .append("svg")
-                        .attr("width", canvas_width)
+                        .attr("width", timeline_width)
                         .attr("height", timeline_height);
   
   var xScale = d3.scale.linear()
@@ -224,7 +228,7 @@ function drawTimelineView(){
         var sequence = s.sequence;
         return sequence[sequence.length-1].end;
       })])
-      .range([0, canvas_width]);
+      .range([0, timeline_width]);
 
   var yScale = d3.scale.ordinal()
         .domain(d3.range(aoi_sequences.length))
