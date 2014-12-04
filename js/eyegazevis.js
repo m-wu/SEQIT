@@ -6,7 +6,8 @@ var mainview_img_width    = 900.0;
 var mainview_img_height   = 719.0;
 var mainview_bg_opacity   = 0.5;
 
-var timeline_height       = 100;
+var timeline_height       = 800;
+var timeline_label_width  = 60;
 
 var zoom_ratio            = 0.7035; // image coordinate / fixation coordinate
 
@@ -16,6 +17,7 @@ var scanpath_width        = 1;
 var fixpoints_group_class = "fixationpoints";
 var scanpath_class        = "scanpath";
 var timeline_class        = "timeline";
+var timeline_label_class  = "triallabel";
 
 var numFilesLoaded        = 0;
 var numFilesToLoad        = 2;
@@ -50,11 +52,6 @@ function initializeViews(){
     return; // wait for files to load
   }
 
-  for(var i in fixation_datasets){
-    // Add a button for the trial in the trial view.
-    var trial = fixation_datasets[i];
-    addButtonToTrialView(trial.user, trial.task);
-  }
   populateTimelineData();
 
   drawAllFixationPoints();
@@ -109,23 +106,6 @@ function isInsideRect(x, y, aoi){
           y >= aoi.y_min && y <= aoi.y_max);
 }
 
-
-function addButtonToTrialView(user, task){  
-  // Add a button in the trial view
-  d3.select("#user-group")
-    .append("button")
-      .attr("type", "button")
-      .attr("class", ["btn", "btn-primary", user, task].join(" "))
-      .attr("autocomplete","off")
-      .text([user, task].join(" "))
-      .on('click', function () {
-        d3.selectAll("."+fixpoints_group_class+"."+user+"."+task)
-          .style("display", $(this).hasClass('active') ? "none" : null);
-        d3.selectAll("."+scanpath_class+"."+user+"."+task)
-          .style("display", $(this).hasClass('active') ? "none" : null);
-      })
-}
-
 function getTrialID(user, task){
   return "user="+user+";task:"+task;
 }
@@ -176,7 +156,7 @@ function drawAllFixationPoints(){
     .enter()
   .append("g")
     .attr("class", function(d){
-      return [fixpoints_group_class,d.user,d.task].join(" ");
+      return [fixpoints_group_class, getUserClassName(d.user), getTaskClassName(d.task)].join(" ");
     })
     .style("display","none")
     .selectAll("circle")
@@ -204,7 +184,7 @@ function drawAllScanPaths(){
     .enter()
   .append("path")
     .attr("class", function(d){
-      return [scanpath_class, d.user, d.task].join(" ");
+      return [scanpath_class, getUserClassName(d.user), getTaskClassName(d.task)].join(" ");
     })
     .style("display","none")
     .attr("d", function(d){
@@ -216,7 +196,7 @@ function drawAllScanPaths(){
 }
 
 function drawTimelineView(){
-  var timeline_width = parseInt(d3.select(".timelinecolumn").style("width"));
+  var timeline_width = parseInt(d3.select("#timelineview").style("width"));
 
   timelineviewsvg = d3.select("#timelineview")
                       .append("svg")
@@ -228,7 +208,7 @@ function drawTimelineView(){
         var sequence = s.sequence;
         return sequence[sequence.length-1].end;
       })])
-      .range([0, timeline_width]);
+      .range([0, timeline_width-timeline_label_width]);
 
   var yScale = d3.scale.ordinal()
         .domain(d3.range(aoi_sequences.length))
@@ -254,12 +234,31 @@ function drawTimelineView(){
       })
       .attr("transform", function(d,i){return "translate(0, "+yScale(i)+")";});
 
-  var rects = groups.selectAll("rect")
+  // Draw the label for each row in the timeline view
+  groups.append("text")
+      .attr("class", timeline_label_class)
+      .attr("width", timeline_label_width)
+      .attr("y", yScale.rangeBand())
+      .attr("dy", "-.15em")
+      .attr("cursor", "pointer")
+      .text(function(d) { 
+        return "user "+d.user.substring(0,3); // temporarily, show the 3 digits of user id
+      })
+      .on('click', function (d) {
+        d3.selectAll("."+[fixpoints_group_class, getUserClassName(d.user), getTaskClassName(d.task)].join("."))
+          .style("display", this.classList.contains("active") ? "none" : null);
+        d3.selectAll("."+[scanpath_class, getUserClassName(d.user), getTaskClassName(d.task)].join("."))
+          .style("display", this.classList.contains("active") ? "none" : null);
+        d3.select(this).classed("active", !this.classList.contains("active"));
+      })
+
+  groups.selectAll(".aoivisit")
       .data(function(d) { return d.sequence; })
       .enter()
       .append("rect")
+      .attr("class", "aoivisit")
       .attr("x", function(d){
-        return xScale(d.start);
+        return xScale(d.start) + timeline_label_width;
       })
       .attr("width", function(d){
         return xScale(d.end)-xScale(d.start);
@@ -271,4 +270,12 @@ function drawTimelineView(){
       })
       .on('mouseover', aoiTip.show)
       .on('mouseout', aoiTip.hide);
+}
+
+function getUserClassName(user){
+  return "user-" + user;
+}
+
+function getTaskClassName(task){
+  return "task-" + task;
 }
