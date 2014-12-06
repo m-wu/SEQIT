@@ -1,4 +1,4 @@
-var fixation_datasets, aois, aoi_sequences = [];
+var fixation_datasets, aois, userchars = {}, aoi_sequences = [];
 
 var mainviewsvg, timelineviewsvg;
 
@@ -35,7 +35,10 @@ function main(){
     fixation_datasets = [];
     for (var i in json){
       // Add the list of fixation points into fixation_datasets
-      fixation_datasets.push({user:json[i].user, task:json[i].task, fixations:json[i].fixpoints});
+      var user_id   = json[i].user.substring(0,3);
+      var task_id   = json[i].task;
+      var fixpoints = json[i].fixpoints;
+      fixation_datasets.push({user:user_id, task:task_id, fixations:fixpoints});
     }
     initializeViews();
   });
@@ -43,6 +46,12 @@ function main(){
   d3.tsv("atuav2.tsv", function(error, rows) {
     aois = rows;
     initializeViews();
+  });
+
+  d3.csv("user_chars.csv", function(error, rows) {
+    for (var i in rows){
+      userchars[(rows[i].user_id).toString()] = rows[i]
+    }
   });
 
 }
@@ -63,7 +72,7 @@ function populateTimelineData(){
   for (var i in fixation_datasets){
     var trial = fixation_datasets[i];
     var aoisequence = getAOISequence(trial.fixations, aois);
-    aoi_sequences.push({user:trial.user, task:trial.task, sequence:aoisequence});
+    aoi_sequences.push({user:trial.user.substring(0,3), task:trial.task, sequence:aoisequence});
   }
 }
 
@@ -229,6 +238,11 @@ function drawTimelineView(){
       .data(aoi_sequences)
       .enter()
       .append("g")
+      .sort(function(a,b){
+        valueA = userchars[a.user].ps_score_value;
+        valueB = userchars[b.user].ps_score_value;
+        return valueA - valueB;
+      })
       .attr("class", function(d){
         return [timeline_class, d.user, d.task].join(" ");
       })
@@ -242,7 +256,7 @@ function drawTimelineView(){
       .attr("dy", "-.15em")
       .attr("cursor", "pointer")
       .text(function(d) { 
-        return "user "+d.user.substring(0,3); // temporarily, show the 3 digits of user id
+        return "user "+d.user;
       })
       .on('click', function (d) {
         d3.selectAll("."+[fixpoints_group_class, getUserClassName(d.user), getTaskClassName(d.task)].join("."))
