@@ -20,7 +20,7 @@ var timeline_class        = "timeline";
 var timeline_label_class  = "triallabel";
 
 var numFilesLoaded        = 0;
-var numFilesToLoad        = 2;
+var numFilesToLoad        = 3;
 
 var noneAOIName           = "None";
 
@@ -52,6 +52,7 @@ function main(){
     for (var i in rows){
       userchars[(rows[i].user_id).toString()] = rows[i]
     }
+    initializeViews();
   });
 
 }
