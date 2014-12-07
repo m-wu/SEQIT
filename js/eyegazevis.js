@@ -68,6 +68,7 @@ function initializeViews(){
   drawAllFixationPoints();
   drawAllScanPaths();
   drawTimelineView();
+  drawHeatmap();
 }
 
 function populateTimelineData(){
@@ -158,6 +159,34 @@ function drawMainView(){
 
   mainviewsvg.append("g")
     .attr("class", scanpath_class);
+}
+
+function drawHeatmap(){
+  var heatmapInstance = h337.create({
+    container: document.querySelector('#mainview')
+  });
+
+  var points = [];
+  var max = 0;
+  for (i in fixation_datasets) {
+    for (j in fixation_datasets[i].fixations){
+      var fixation = fixation_datasets[i].fixations[j];
+      var dataPoint = { 
+        x: zoom_ratio*fixation.x, // x coordinate of the datapoint, a number 
+        y: zoom_ratio*fixation.y, // y coordinate of the datapoint, a number
+        value: fixation.duration // the value at datapoint(x, y)
+      };
+      max = Math.max(max, fixation.duration);
+      points.push(dataPoint);
+    }
+  }
+
+  var data = { 
+    max: max, 
+    data: points 
+  };
+
+  heatmapInstance.setData(data);
 }
 
 function drawAllFixationPoints(){
