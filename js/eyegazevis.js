@@ -18,6 +18,7 @@ var fixpoints_group_class = "fixationpoints";
 var scanpath_class        = "scanpath";
 var timeline_class        = "timeline";
 var timeline_label_class  = "triallabel";
+var tlrow_faded_class     = "faded";
 
 var numFilesLoaded        = 0;
 var numFilesToLoad        = 3;
@@ -235,7 +236,7 @@ function drawTimelineView(){
       });
   timelineviewsvg.call(aoiTip);
 
-  var groups = timelineviewsvg.selectAll("g")
+  var timelinerows = timelineviewsvg.selectAll("g")
       .data(aoi_sequences)
       .enter()
       .append("g")
@@ -247,10 +248,19 @@ function drawTimelineView(){
       .attr("class", function(d){
         return [timeline_class, d.user, d.task].join(" ");
       })
-      .attr("transform", function(d,i){return "translate(0, "+yScale(i)+")";});
+      .attr("transform", function(d,i){return "translate(0, "+yScale(i)+")";})
+      .on('mouseover', function(d){
+        timelinerows.classed(tlrow_faded_class, true);
+        d3.select(this).classed(tlrow_faded_class, false);
+        drawScanpathForTrial(d);
+      })
+      .on('mouseout', function(d){
+        timelinerows.classed(tlrow_faded_class, false);
+        hideAllScanpaths();
+      });
 
   // Draw the label for each row in the timeline view
-  groups.append("text")
+  timelinerows.append("text")
       .attr("class", timeline_label_class)
       .attr("width", timeline_label_width)
       .attr("y", yScale.rangeBand())
@@ -267,7 +277,7 @@ function drawTimelineView(){
         d3.select(this).classed("active", !this.classList.contains("active"));
       })
 
-  groups.selectAll(".aoivisit")
+  timelinerows.selectAll(".aoivisit")
       .data(function(d) { return d.sequence; })
       .enter()
       .append("rect")
@@ -285,6 +295,31 @@ function drawTimelineView(){
       })
       .on('mouseover', aoiTip.show)
       .on('mouseout', aoiTip.hide);
+
+  // draw a hidden rectangle covering entire row to receive mouse events
+  timelinerows.append("rect")
+      .attr("width", timeline_width)
+      .attr("height", yScale.rangeBand()+1)
+      .attr("opacity", 0);
+}
+
+// draw the fixation points and the scan path for a trial
+function drawScanpathForTrial(d){
+  d3.select("."+[fixpoints_group_class, getUserClassName(d.user), getTaskClassName(d.task)].join("."))
+    .style("display", null);
+  d3.select("."+[scanpath_class, getUserClassName(d.user), getTaskClassName(d.task)].join("."))
+    .style("display", null);
+}
+
+function hideAllScanpaths(){
+  d3.select("."+fixpoints_group_class).selectAll("g")
+    .style("display", "none");
+  d3.select("."+scanpath_class).selectAll("path")
+    .style("display", "none");
+}
+
+function resetTimeline(){
+  timelineviewsvg.selectAll("g").classed(tlrow_faded_class, false);
 }
 
 function getUserClassName(user){
