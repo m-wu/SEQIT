@@ -263,10 +263,25 @@ function drawAllScanPaths(){
 function drawTimelineView(){
   var timeline_width = parseInt(d3.select("#timelineview").style("width"));
 
+  var mouseentered = false;
+
   timelineviewsvg = d3.select("#timelineview")
-                      .append("svg")
-                        .attr("width", timeline_width)
-                        .attr("height", timeline_height);
+      .append("svg")
+        .attr("width", timeline_width)
+        .attr("height", timeline_height)
+        .on("mousemove", function() {
+          yScaleFisheye.focus(d3.mouse(this)[1]);
+          if (!mouseentered){
+            setTimelineRowHeightWithTransition(yScaleFisheye, timelinerows);
+            mouseentered = true;
+          } else {
+            setTimelineRowHeight(yScaleFisheye, timelinerows);
+          }
+        })
+        .on("mouseleave", function(){
+          setTimelineRowHeightWithTransition(yScale, timelinerows);
+          mouseentered = false;
+        });
   
   var xScale = d3.scale.linear()
       .domain([0, d3.max(aoi_sequences, function(s){
@@ -278,6 +293,11 @@ function drawTimelineView(){
   var yScale = d3.scale.ordinal()
         .domain(d3.range(aoi_sequences.length))
         .rangeRoundBands([0, timeline_height], 0.05);
+
+  var yScaleFisheye = d3.fisheye.ordinal()
+        .domain(d3.range(aoi_sequences.length))
+        .rangeRoundBands([0, timeline_height], 0.05)
+        .distortion(1); 
 
   var colorScale = d3.scale.category10()
       .domain(aois.map(function(aoi){return aoi.Name;}));
@@ -317,7 +337,6 @@ function drawTimelineView(){
   timelinerows.append("text")
       .attr("class", timeline_label_class)
       .attr("width", timeline_label_width)
-      .attr("y", yScale.rangeBand())
       .attr("dy", "-.15em")
       .attr("cursor", "pointer")
       .text(function(d) { 
@@ -343,7 +362,6 @@ function drawTimelineView(){
         return xScale(d.end)-xScale(d.start);
       })
       .attr("y", 0)
-      .attr("height", yScale.rangeBand())
       .style("fill", function(d){
         return colorScale(d.aoi);
       })
@@ -352,9 +370,39 @@ function drawTimelineView(){
 
   // draw a hidden rectangle covering entire row to receive mouse events
   timelinerows.append("rect")
+      .attr("class", "bg")
       .attr("width", timeline_width)
-      .attr("height", yScale.rangeBand()+1)
       .attr("opacity", 0);
+
+  setTimelineRowHeight(yScale, timelinerows);
+}
+
+function setTimelineRowHeight(scale, timelinerows){
+    timelinerows
+      .attr("transform", function(d,i){return "translate(0, "+scale(i)+")";})
+
+    timelinerows.selectAll("text")
+      .attr("y", function(d, i, j){return scale.rangeBand(j)*.8})
+
+    timelinerows.selectAll('.aoivisit')
+      .attr("height", function(d, i, j){return scale.rangeBand(j)})
+
+    timelinerows.selectAll('.bg')
+      .attr("height", function(d, i, j){return scale.rangeBand(j)+5})
+}
+
+function setTimelineRowHeightWithTransition(scale, timelinerows){
+    timelinerows.transition()
+      .attr("transform", function(d,i){return "translate(0, "+scale(i)+")";})
+
+    timelinerows.selectAll("text").transition()
+      .attr("y", function(d, i, j){return scale.rangeBand(j)*.8})
+
+    timelinerows.selectAll('.aoivisit').transition()
+      .attr("height", function(d, i, j){return scale.rangeBand(j)})
+
+    timelinerows.selectAll('.bg').transition()
+      .attr("height", function(d, i, j){return scale.rangeBand(j)+5})
 }
 
 // draw the fixation points and the scan path for a trial
