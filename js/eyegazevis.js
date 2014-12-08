@@ -69,6 +69,7 @@ function initializeViews(){
   drawAllScanPaths();
   drawTimelineView();
   drawHeatmap();
+  drawAOIs();
 }
 
 function populateTimelineData(){
@@ -189,6 +190,30 @@ function drawHeatmap(){
   heatmapInstance.setData(data);
 }
 
+function drawAOIs(){
+  mainviewsvg.append("g")
+    .attr("transform", "scale("+zoom_ratio+")")
+    .selectAll("rect")
+    .data(aois)
+    .enter()
+    .append("rect")
+      .attr("class", function(d){return "aoi "+ d.Name})
+      .attr("x", function(d){return d.x_min;})
+      .attr("y", function(d){return d.y_min;})
+      .attr("width", function(d){return d.x_max - d.x_min;})
+      .attr("height", function(d){return d.y_max - d.y_min;})
+      .attr("opacity", 0)
+      .on('mouseover', function(d){
+        d3.selectAll(".aoivisit").classed("faded", true);
+        d3.selectAll("."+d.Name).classed("faded", false);
+        d3.select(this).classed("hovered", true);
+      })
+      .on('mouseout', function(d){
+        d3.selectAll(".aoivisit").classed("faded", false);
+        d3.select(this).classed("hovered", false);
+      });
+}
+
 function drawAllFixationPoints(){
   mainviewsvg.select("."+fixpoints_group_class)
     .selectAll("g")
@@ -275,7 +300,7 @@ function drawTimelineView(){
         return valueA - valueB;
       })
       .attr("class", function(d){
-        return [timeline_class, d.user, d.task].join(" ");
+        return [timeline_class, getUserClassName(d.user), getTaskClassName(d.task)].join(" ");
       })
       .attr("transform", function(d,i){return "translate(0, "+yScale(i)+")";})
       .on('mouseover', function(d){
@@ -310,7 +335,7 @@ function drawTimelineView(){
       .data(function(d) { return d.sequence; })
       .enter()
       .append("rect")
-      .attr("class", "aoivisit")
+      .attr("class", function(d){return "aoivisit "+d.aoi;})
       .attr("x", function(d){
         return xScale(d.start) + timeline_label_width;
       })

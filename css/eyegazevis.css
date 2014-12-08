@@ -1,6 +1,39 @@
-.faded{
+.timeline.faded{
   opacity: 0.5;
 }
+
+.aoivisit.faded{
+  opacity: 0.1;
+}
+
+.heatmap-canvas{
+  pointer-events: none;
+}
+
+.aoi.hovered{
+  opacity: 0.5;
+}
+
+.aoi.hovered.High{
+  fill: rgb(214, 39, 40);
+}
+
+.aoi.hovered.Labels{
+  fill: rgb(255, 127, 14);
+}
+
+.aoi.hovered.Legend{
+  fill: rgb(44, 160, 44);
+}
+
+.aoi.hovered.Question{
+  fill: rgb(31, 119, 180);
+}
+
+.aoi.hovered.Input{
+  fill: rgb(148, 103, 189);
+}
+
 
 /* Sticky footer styles
 -------------------------------------------------- */
