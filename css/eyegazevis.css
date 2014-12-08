@@ -34,6 +34,9 @@
   fill: rgb(148, 103, 189);
 }
 
+#timeline-control{
+  margin-bottom: 10px;
+}
 
 /* Sticky footer styles
 -------------------------------------------------- */

@@ -23,8 +23,24 @@
           <div id="mainview"></div>
         </div>
         <div class="col-md-6 timelinecolumn">
-          <div id="timeline-control"></div>
+          <div id="timeline-control">
+            <div class="btn-group">
+              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                Sort <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu" role="menu">
+                <li><a href="#">Perceptural Speed: High to Low</a></li>
+                <li><a href="#">Perceptural Speed: Low to High</a></li>
+                <li class="divider"></li>
+                <li><a href="#">Visual Working Memory: High to Low</a></li>
+                <li><a href="#">Visual Working Memory: Low to High</a></li>
+                <li class="divider"></li>
+                <li><a href="#">Verbal Working Memory: High to Low</a></li>
+                <li><a href="#">Verbal Working Memory: Low to High</a></li>
+              </ul>
+            </div>
             <span class="pull-right"><input type="checkbox" id="tl-abs-rel" checked data-toggle="toggle" data-on="Absolute" data-off="Relative" data-onstyle="default" data-offstyle="default" data-size="small"></span>
+          </div>
           <div id="timelineview"></div>
         </div>
       </div>
