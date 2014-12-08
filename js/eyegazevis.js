@@ -188,6 +188,16 @@ function drawHeatmap(){
   };
 
   heatmapInstance.setData(data);
+
+  $('#heatmap-toggle').change(function() {
+      if ($(this).prop('checked')){
+        d3.select(".heatmap-canvas")
+          .classed("hidden", false)
+      } else {
+        d3.select(".heatmap-canvas")
+          .classed("hidden", true)
+      }
+  })
 }
 
 function drawAOIs(){
