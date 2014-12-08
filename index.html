@@ -7,6 +7,7 @@
     <title>Eye Gaze Sequence Visualization</title>
     
     <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap-toggle.min.css" rel="stylesheet">
     <link href="css/d3-tip.css" rel="stylesheet">
     <link href="css/eyegazevis.css" rel="stylesheet">
   </head>
@@ -22,6 +23,8 @@
           <div id="mainview"></div>
         </div>
         <div class="col-md-6 timelinecolumn">
+          <div id="timeline-control"></div>
+            <span class="pull-right"><input type="checkbox" id="tl-abs-rel" checked data-toggle="toggle" data-on="Absolute" data-off="Relative" data-onstyle="default" data-offstyle="default" data-size="small"></span>
           <div id="timelineview"></div>
         </div>
       </div>
@@ -37,6 +40,7 @@
     <script src="js/jquery-2.1.1.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="js/bootstrap.min.js"></script>
+    <script src="js/bootstrap-toggle.min.js"></script>
     <script src="js/d3.min.js"></script>
     <script src="js/d3-tip.js"></script>
     <script src="js/heatmap.min.js"></script>

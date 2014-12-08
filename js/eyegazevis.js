@@ -283,11 +283,15 @@ function drawTimelineView(){
           mouseentered = false;
         });
   
-  var xScale = d3.scale.linear()
+  var xScaleAbsolute = d3.scale.linear()
       .domain([0, d3.max(aoi_sequences, function(s){
         var sequence = s.sequence;
         return sequence[sequence.length-1].end;
       })])
+      .range([0, timeline_width-timeline_label_width]);
+
+  var xScaleRelative = d3.scale.linear()
+      .domain([0, 1])
       .range([0, timeline_width-timeline_label_width]);
 
   var yScale = d3.scale.ordinal()
@@ -355,12 +359,6 @@ function drawTimelineView(){
       .enter()
       .append("rect")
       .attr("class", function(d){return "aoivisit "+d.aoi;})
-      .attr("x", function(d){
-        return xScale(d.start) + timeline_label_width;
-      })
-      .attr("width", function(d){
-        return xScale(d.end)-xScale(d.start);
-      })
       .attr("y", 0)
       .style("fill", function(d){
         return colorScale(d.aoi);
@@ -375,6 +373,15 @@ function drawTimelineView(){
       .attr("opacity", 0);
 
   setTimelineRowHeight(yScale, timelinerows);
+  setTimelineAbsoluteScale(xScaleAbsolute, timelinerows);
+
+  $('#tl-abs-rel').change(function() {
+      if ($(this).prop('checked')){
+        setTimelineAbsoluteScale(xScaleAbsolute, timelinerows);
+      } else {
+        setTimelineRelativeScale(xScaleRelative, timelinerows);
+      }
+  })
 }
 
 function setTimelineRowHeight(scale, timelinerows){
@@ -403,6 +410,30 @@ function setTimelineRowHeightWithTransition(scale, timelinerows){
 
     timelinerows.selectAll('.bg').transition()
       .attr("height", function(d, i, j){return scale.rangeBand(j)+5})
+}
+
+function setTimelineAbsoluteScale(xScaleAbsolute, timelinerows){
+  timelinerows.transition().selectAll(".aoivisit")
+      .attr("x", function(d){
+        return xScaleAbsolute(d.start) + timeline_label_width;
+      })
+      .attr("width", function(d){
+        return xScaleAbsolute(d.end)-xScaleAbsolute(d.start);
+      })
+}
+
+function setTimelineRelativeScale(xScaleRelative, timelinerows){
+  timelinerows.transition().selectAll(".aoivisit")
+      .attr("x", function(d){
+        var sequence = d3.select(this.parentNode).datum().sequence;
+        var max = sequence[sequence.length-1].end;
+        return xScaleRelative(d.start/max) + timeline_label_width;
+      })
+      .attr("width", function(d){
+        var sequence = d3.select(this.parentNode).datum().sequence;
+        var max = sequence[sequence.length-1].end;
+        return xScaleRelative(d.end/max)-xScaleRelative(d.start/max);
+      })
 }
 
 // draw the fixation points and the scan path for a trial
