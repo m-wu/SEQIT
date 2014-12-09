@@ -49,7 +49,17 @@ function main(){
     initializeViews();
   });
 
-  d3.csv("user_chars.csv", function(error, rows) {
+  d3.csv("user_chars.csv", function(d) {
+    return {
+      user_id: d.user_id,
+      ps_score_value: +d.ps_score_value,
+      ps_score_cat: d.ps_score_cat,
+      verbal_score_value: +d.verbal_score_value,
+      verbal_score_cat: d.verbal_score_cat,
+      visual_score_value: +d.visual_score_value,
+      visual_score_cat: d.visual_score_cat
+    };
+  }, function(error, rows) {
     for (var i in rows){
       userchars[(rows[i].user_id).toString()] = rows[i]
     }
