@@ -38,6 +38,25 @@
   margin-bottom: 10px;
 }
 
+g.userchars rect{
+  fill: gray;
+}
+
+.header-sort{
+  display: inline-block;
+  padding: 0;
+  line-height: 30px;
+  letter-spacing: 5px;
+}
+
+.fa-sort, .fa-sort-asc, .fa-sort-desc{
+  cursor: pointer;
+}
+
+.fa-sort{
+  opacity: 0.5;
+}
+
 /* Sticky footer styles
 -------------------------------------------------- */
 html {

@@ -18,12 +18,20 @@ var fixpoints_group_class = "fixationpoints";
 var scanpath_class        = "scanpath";
 var timeline_class        = "timeline";
 var timeline_label_class  = "triallabel";
+var timeline_char_class   = "userchars";
 var tlrow_faded_class     = "faded";
 
 var numFilesLoaded        = 0;
 var numFilesToLoad        = 3;
 
 var noneAOIName           = "None";
+
+var max_ps_value          = 0;
+var min_ps_value          = Infinity;
+var max_verbal_value      = 0;
+var min_verbal_value      = Infinity;
+var max_visual_value      = 0;
+var min_visual_value      = Infinity;
 
 $(window).load(function() {
   main();
@@ -62,6 +70,12 @@ function main(){
   }, function(error, rows) {
     for (var i in rows){
       userchars[(rows[i].user_id).toString()] = rows[i]
+      max_ps_value = Math.max(max_ps_value, rows[i].ps_score_value)
+      min_ps_value = Math.min(min_ps_value, rows[i].ps_score_value)
+      max_verbal_value = Math.max(max_verbal_value, rows[i].verbal_score_value)
+      min_verbal_value = Math.min(min_verbal_value, rows[i].verbal_score_value)
+      max_visual_value = Math.max(max_visual_value, rows[i].visual_score_value)
+      min_visual_value = Math.min(min_visual_value, rows[i].visual_score_value)
     }
     initializeViews();
   });
@@ -282,6 +296,7 @@ function drawAllScanPaths(){
 
 function drawTimelineView(){
   var timeline_width = parseInt(d3.select("#timelineview").style("width"));
+  var timeline_chars_width = parseInt($("#sorting-widgets").width());
 
   var mouseentered = false;
 
@@ -308,11 +323,11 @@ function drawTimelineView(){
         var sequence = s.sequence;
         return sequence[sequence.length-1].end;
       })])
-      .range([0, timeline_width-timeline_label_width]);
+      .range([0, timeline_width-timeline_label_width-timeline_chars_width]);
 
   var xScaleRelative = d3.scale.linear()
       .domain([0, 1])
-      .range([0, timeline_width-timeline_label_width]);
+      .range([0, timeline_width-timeline_label_width-timeline_chars_width]);
 
   var yScale = d3.scale.ordinal()
         .domain(d3.range(aoi_sequences.length))
@@ -338,11 +353,6 @@ function drawTimelineView(){
       .data(aoi_sequences)
       .enter()
       .append("g")
-      .sort(function(a,b){
-        valueA = userchars[a.user].ps_score_value;
-        valueB = userchars[b.user].ps_score_value;
-        return valueA - valueB;
-      })
       .attr("class", function(d){
         return [timeline_class, getUserClassName(d.user), getTaskClassName(d.task)].join(" ");
       })
@@ -357,10 +367,14 @@ function drawTimelineView(){
         hideAllScanpaths();
       });
 
+  drawUserCharBars(timelinerows.append("g").attr("class", timeline_char_class), timeline_chars_width);
+  initTimelineSorting(timelinerows, yScale);
+
   // Draw the label for each row in the timeline view
   timelinerows.append("text")
       .attr("class", timeline_label_class)
       .attr("width", timeline_label_width)
+      .attr("x", timeline_chars_width)
       .attr("dy", "-.15em")
       .attr("cursor", "pointer")
       .text(function(d) { 
@@ -374,7 +388,9 @@ function drawTimelineView(){
         d3.select(this).classed("active", !this.classList.contains("active"));
       })
 
-  timelinerows.selectAll(".aoivisit")
+  timelinerows.append("g")
+      .attr("transform", "translate("+ (timeline_label_width + timeline_chars_width) + ",0)")
+      .selectAll(".aoivisit")
       .data(function(d) { return d.sequence; })
       .enter()
       .append("rect")
@@ -404,6 +420,39 @@ function drawTimelineView(){
   })
 }
 
+function drawUserCharBars(parent, timeline_chars_width){
+  timeline_char_width = timeline_chars_width / 3;
+  timeline_char_height = timeline_char_width * 0.9;
+
+  psScale = d3.scale.linear()
+      .domain([getMinDomain(min_ps_value, max_ps_value), max_ps_value])
+      .range([0, timeline_char_height]);
+
+  parent.append("rect")
+      .attr("x", 0)
+      .attr("width", function(d){return psScale(userchars[d.user].ps_score_value)});
+
+  verbalScale = d3.scale.linear()
+      .domain([getMinDomain(min_verbal_value, max_verbal_value), max_verbal_value])
+      .range([0, timeline_char_height]);
+
+  parent.append("rect")
+      .attr("x", timeline_char_width)
+      .attr("width", function(d){return verbalScale(userchars[d.user].verbal_score_value)});
+
+  visualScale = d3.scale.linear()
+      .domain([getMinDomain(min_visual_value, max_visual_value), max_visual_value])
+      .range([0, timeline_char_height]);
+
+  parent.append("rect")
+      .attr("x", timeline_char_width*2)
+      .attr("width", function(d){return visualScale(userchars[d.user].visual_score_value)});
+}
+
+function getMinDomain(minValue, maxValue){
+  return minValue - (maxValue - minValue)/3;
+}
+
 function setTimelineRowHeight(scale, timelinerows){
     timelinerows
       .attr("transform", function(d,i){return "translate(0, "+scale(i)+")";})
@@ -411,7 +460,7 @@ function setTimelineRowHeight(scale, timelinerows){
     timelinerows.selectAll("text")
       .attr("y", function(d, i, j){return scale.rangeBand(j)*.8})
 
-    timelinerows.selectAll('.aoivisit')
+    timelinerows.selectAll('rect')
       .attr("height", function(d, i, j){return scale.rangeBand(j)})
 
     timelinerows.selectAll('.bg')
@@ -425,7 +474,7 @@ function setTimelineRowHeightWithTransition(scale, timelinerows){
     timelinerows.selectAll("text").transition()
       .attr("y", function(d, i, j){return scale.rangeBand(j)*.8})
 
-    timelinerows.selectAll('.aoivisit').transition()
+    timelinerows.selectAll('rect').transition()
       .attr("height", function(d, i, j){return scale.rangeBand(j)})
 
     timelinerows.selectAll('.bg').transition()
@@ -435,7 +484,7 @@ function setTimelineRowHeightWithTransition(scale, timelinerows){
 function setTimelineAbsoluteScale(xScaleAbsolute, timelinerows){
   timelinerows.transition().selectAll(".aoivisit")
       .attr("x", function(d){
-        return xScaleAbsolute(d.start) + timeline_label_width;
+        return xScaleAbsolute(d.start);
       })
       .attr("width", function(d){
         return xScaleAbsolute(d.end)-xScaleAbsolute(d.start);
@@ -447,13 +496,75 @@ function setTimelineRelativeScale(xScaleRelative, timelinerows){
       .attr("x", function(d){
         var sequence = d3.select(this.parentNode).datum().sequence;
         var max = sequence[sequence.length-1].end;
-        return xScaleRelative(d.start/max) + timeline_label_width;
+        return xScaleRelative(d.start/max);
       })
       .attr("width", function(d){
         var sequence = d3.select(this.parentNode).datum().sequence;
         var max = sequence[sequence.length-1].end;
         return xScaleRelative(d.end/max)-xScaleRelative(d.start/max);
       })
+}
+
+function initTimelineSorting(rows, scale){
+  d3.select("#ps-sort")
+    .on("click", function(){
+      var asc = updateIcon(this);
+      sortTimelineByChar(rows, scale, "ps", asc);
+      rearrangeTimelineRows(rows, scale);
+    });
+
+  d3.select("#verbal-sort")
+    .on("click", function(){
+      var asc = updateIcon(this);
+      sortTimelineByChar(rows, scale, "verbal", asc);
+      rearrangeTimelineRows(rows, scale);
+    });
+
+  d3.select("#visual-sort")
+    .on("click", function(){
+      var asc = updateIcon(this);
+      sortTimelineByChar(rows, scale, "visual", asc);
+      rearrangeTimelineRows(rows, scale);
+    });
+}
+
+function updateIcon(iconDOM){
+  if (iconDOM.classList.contains("fa-sort")){
+    // set other sort icons to unsorted
+    d3.select('#sorting-widgets').selectAll('.fa-sort-asc')
+      .classed("fa-sort-asc", false)
+      .classed("fa-sort", true)
+
+    d3.select('#sorting-widgets').selectAll('.fa-sort-desc')
+      .classed("fa-sort-desc", false)
+      .classed("fa-sort", true)
+  }
+
+  var icon = d3.select(iconDOM);
+  icon.classed("fa-sort", false);
+
+  if (iconDOM.classList.contains("fa-sort-desc")){
+    icon.classed("fa-sort-desc", false);
+    icon.classed("fa-sort-asc", true);
+    return true;
+  } else{
+    icon.classed("fa-sort-asc", false);
+    icon.classed("fa-sort-desc", true);
+    return false;
+  }
+}
+
+function sortTimelineByChar(rows, scale, char, asc){
+  rows.sort(function(a,b){
+    valueA = eval("userchars[a.user]."+char+"_score_value");
+    valueB = eval("userchars[b.user]."+char+"_score_value");
+    return asc ? valueA - valueB : valueB - valueA;
+  })
+}
+
+function rearrangeTimelineRows(rows, scale){
+  rows.transition().delay(function(d, i) { return i * 5; })
+    .attr("transform", function(d,i){return "translate(0, "+scale(i)+")";})
 }
 
 // draw the fixation points and the scan path for a trial
