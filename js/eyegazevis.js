@@ -367,6 +367,12 @@ function drawTimelineView(){
         hideAllScanpaths();
       });
 
+  // draw a hidden rectangle covering entire row to receive mouse events
+  timelinerows.append("rect")
+      .attr("class", "bg")
+      .attr("width", timeline_width)
+      .attr("opacity", 0);
+
   drawUserCharBars(timelinerows.append("g").attr("class", timeline_char_class), timeline_chars_width);
   initTimelineSorting(timelinerows, yScale);
 
@@ -401,12 +407,6 @@ function drawTimelineView(){
       })
       .on('mouseover', aoiTip.show)
       .on('mouseout', aoiTip.hide);
-
-  // draw a hidden rectangle covering entire row to receive mouse events
-  timelinerows.append("rect")
-      .attr("class", "bg")
-      .attr("width", timeline_width)
-      .attr("opacity", 0);
 
   setTimelineRowHeight(yScale, timelinerows);
   setTimelineAbsoluteScale(xScaleAbsolute, timelinerows);
