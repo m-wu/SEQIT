@@ -382,17 +382,10 @@ function drawTimelineView(){
       .attr("width", timeline_label_width)
       .attr("x", timeline_chars_width)
       .attr("dy", "-.15em")
-      .attr("cursor", "pointer")
+      .attr("cursor", "default")
       .text(function(d) { 
         return "user "+d.user;
-      })
-      .on('click', function (d) {
-        d3.selectAll("."+[fixpoints_group_class, getUserClassName(d.user), getTaskClassName(d.task)].join("."))
-          .style("display", this.classList.contains("active") ? "none" : null);
-        d3.selectAll("."+[scanpath_class, getUserClassName(d.user), getTaskClassName(d.task)].join("."))
-          .style("display", this.classList.contains("active") ? "none" : null);
-        d3.select(this).classed("active", !this.classList.contains("active"));
-      })
+      });
 
   timelinerows.append("g")
       .attr("transform", "translate("+ (timeline_label_width + timeline_chars_width) + ",0)")
