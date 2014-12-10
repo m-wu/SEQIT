@@ -148,7 +148,7 @@ function getTrialID(user, task){
 }
 
 function drawMainView(){
-  var mainview_width = parseFloat(d3.select(".mainviewcolumn").style("width"));
+  var mainview_width = parseFloat(d3.select("#mainview").style("width"));
   var mainview_height = mainview_width * mainview_img_height / mainview_img_width;
 
   zoom_ratio = zoom_ratio * (mainview_width/mainview_img_width);
