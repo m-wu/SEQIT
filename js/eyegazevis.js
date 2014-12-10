@@ -188,7 +188,8 @@ function drawMainView(){
 
 function drawHeatmap(){
   var heatmapInstance = h337.create({
-    container: document.querySelector('#mainview')
+    container: document.querySelector('#mainview'),
+    radius: 20
   });
 
   var points = [];
