@@ -52,7 +52,15 @@ function main(){
     initializeViews();
   });
 
-  d3.tsv("atuav2.tsv", function(error, rows) {
+  d3.tsv("atuav2.tsv", function(d) {
+    return {
+      Name: d.Name,
+      x_min: +d.x_min,
+      x_max: +d.x_max,
+      y_min: +d.y_min,
+      y_max: +d.y_max
+    };
+  }, function(error, rows) {
     aois = rows;
     initializeViews();
   });
@@ -226,27 +234,39 @@ function drawHeatmap(){
 }
 
 function drawAOIs(){
-  mainviewsvg.append("g")
+  var aoigroup = mainviewsvg.append("g")
     .attr("transform", "scale("+zoom_ratio+")")
     .selectAll("rect")
     .data(aois)
     .enter()
-    .append("rect")
-      .attr("class", function(d){return "aoi "+ d.Name})
-      .attr("x", function(d){return d.x_min;})
-      .attr("y", function(d){return d.y_min;})
-      .attr("width", function(d){return d.x_max - d.x_min;})
-      .attr("height", function(d){return d.y_max - d.y_min;})
-      .attr("opacity", 0)
-      .on('mouseover', function(d){
-        d3.selectAll(".aoivisit").classed("faded", true);
-        d3.selectAll("."+d.Name).classed("faded", false);
-        d3.select(this).classed("hovered", true);
-      })
-      .on('mouseout', function(d){
-        d3.selectAll(".aoivisit").classed("faded", false);
-        d3.select(this).classed("hovered", false);
-      });
+    .append("g")
+    .attr("class", function(d){return "aoi "+ d.Name})
+    .on('mouseover', function(d){
+      d3.selectAll(".aoivisit").classed("faded", true);
+      d3.selectAll("."+d.Name).classed("faded", false);
+      d3.select(this).classed("hovered", true);
+    })
+    .on('mouseout', function(d){
+      d3.selectAll(".aoivisit").classed("faded", false);
+      d3.select(this).classed("hovered", false);
+    });
+
+  aoigroup.append("rect")
+    .attr("x", function(d){return d.x_min;})
+    .attr("y", function(d){return d.y_min;})
+    .attr("width", function(d){return d.x_max - d.x_min;})
+    .attr("height", function(d){return d.y_max - d.y_min;});
+
+  aoigroup.append("text")
+    .attr("class", function(d){return "aoi-label "+ d.Name})
+    .text(function(d) {return d.Name;})
+    .attr("x", function(d){return (d.x_max+d.x_min)/2;})
+    .attr("y", function(d){return (d.y_max+d.y_min)/2;})
+    .attr("dy", "15px")
+    .attr("font-size", "40px")
+    .attr("fill", "white")
+    .attr("text-anchor", "middle")
+    .attr("cursor", "default");
 }
 
 function drawAllFixationPoints(){
