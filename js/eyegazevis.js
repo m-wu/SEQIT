@@ -231,11 +231,13 @@ function drawHeatmap(){
 
   $('#heatmap-toggle').change(function() {
       if ($(this).prop('checked')){
-        d3.select(".heatmap-canvas")
-          .classed("hidden", false)
+        d3.select(".heatmap-canvas")          
+          .transition()
+          .style("opacity", 0.6)
       } else {
         d3.select(".heatmap-canvas")
-          .classed("hidden", true)
+          .transition()
+          .style("opacity", 0)
       }
   })
 }
