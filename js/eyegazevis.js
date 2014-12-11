@@ -33,6 +33,11 @@ var min_verbal_value      = Infinity;
 var max_visual_value      = 0;
 var min_visual_value      = Infinity;
 
+var definedSequences      = [];
+var currentSequenceRow    = null;
+var currentSequence       = null;
+var maxSequenceLength     = 5;
+
 $(window).load(function() {
   main();
 });
@@ -102,6 +107,8 @@ function initializeViews(){
   drawTimelineView();
   drawHeatmap();
   drawAOIs();
+
+  initSequenceControls();
 }
 
 function populateTimelineData(){
@@ -242,13 +249,32 @@ function drawAOIs(){
     .append("g")
     .attr("class", function(d){return "aoi "+ d.Name})
     .on('mouseover', function(d){
-      d3.selectAll(".aoivisit").classed("faded", true);
-      d3.selectAll("."+d.Name).classed("faded", false);
       d3.select(this).classed("hovered", true);
+      if (this.classList.contains('clickable')){
+        var hoveredSequence = currentSequence.slice(0);
+        hoveredSequence.push(d);
+        showSequenceInTimeline(hoveredSequence);
+      } else {
+        d3.selectAll(".aoivisit").classed("faded", true);
+        d3.selectAll("."+d.Name).classed("faded", false);
+      }
     })
     .on('mouseout', function(d){
-      d3.selectAll(".aoivisit").classed("faded", false);
+      if (!this.classList.contains('clickable') || currentSequence.length == 0){
+        d3.selectAll(".aoivisit").classed("faded", false);
+      } else {
+        showSequenceInTimeline(currentSequence);
+      }
       d3.select(this).classed("hovered", false);
+    })
+    .on('click', function(d){
+      if (this.classList.contains('clickable')){
+        d3.selectAll(".aoi").classed("invalid", false)
+        // prevent same AOI appear consecutively in a sequence
+        d3.select(this).classed("invalid", true)
+        addAOIToSequence(d);
+        showSequenceInTimeline(currentSequence);
+      }
     });
 
   aoigroup.append("rect")
@@ -606,4 +632,102 @@ function getUserClassName(user){
 
 function getTaskClassName(task){
   return "task-" + task;
+}
+
+function initSequenceControls(){
+  $('#new-seq-button').on('click', function () {
+    definedSequences.push([]);
+    currentSequence = definedSequences[definedSequences.length-1];
+
+    currentSequenceRow = createNewSequenceRow();
+
+    d3.select(this).attr("disabled", "disabled");
+    d3.selectAll("g.aoi").classed("clickable", true);
+  })
+}
+
+function createNewSequenceRow(){
+  var row = d3.select(".seq-list").append("tr");
+
+  for (var i = 0; i < maxSequenceLength; i++){
+    row.append("td").attr("class", "col-xs-2 seq-empty");
+  }
+
+  var seq_edit_cell = row.append("td")
+    .attr("class", "col-xs-1 col-xs-offset-1 seq-edit fa-lg");
+
+  // the green checkmark "done" button
+  seq_edit_cell.append('i')
+    .attr("class", "fa fa-check-circle")
+    .on("click", function(){
+      seq_edit_cell.select(".fa-check-circle").remove();
+
+      currentSequenceRow
+        .classed("unselected", true)
+        .on("mouseover", function(d, i, j){
+          d3.select(this).classed("unselected", false);
+          d3.select(this).classed("hovered", true);
+          showSequenceInTimeline(d);
+        })
+        .on("mouseout", function(){
+          d3.select(this).classed("unselected", true);
+          d3.select(this).classed("hovered", false);
+          d3.selectAll("rect.aoivisit").classed("faded", false);
+          d3.selectAll("rect.sequence").classed("sequence", false);
+        });
+
+      currentSequence = null;
+      currentSequenceRow = null;
+      d3.select("#new-seq-button").attr("disabled", null);
+      d3.selectAll("g.aoi").classed("clickable", false);
+      d3.select("g.aoi.invalid").classed("invalid", false);
+      d3.selectAll("rect.sequence").classed("sequence", false);
+      d3.selectAll("rect.aoivisit").classed("faded", false);
+      d3.selectAll("td.seq-empty").classed("seq-empty", false);
+    });
+
+  seq_edit_cell.append("i")
+    .attr("class", "fa fa-times-circle")
+    .on("click", function(d, i, j){
+      console.log(this.parentNode.parentNode);
+    });
+
+  return row;
+}
+
+function addAOIToSequence(aoi){
+  if (currentSequence.length >= maxSequenceLength){
+    return;
+  }
+
+  currentSequence.push(aoi);
+
+  d3.select(".seq-list").selectAll("tr")
+    .data(definedSequences)
+    .selectAll("td")
+    .data(function(d) {return d;})
+    .attr("class", function(d){
+      return "col-xs-2 seq-aoi "+d.Name})
+    .text(function(d){return d.Name;});
+}
+
+function showSequenceInTimeline(sequence){
+  d3.selectAll(".aoivisit")
+    .classed("sequence", false)
+    .each(function(d,i){
+      matchSequence(sequence, this, 0);
+    });
+
+  d3.selectAll(".aoivisit").classed("faded", true);
+  d3.selectAll(".sequence").classed("faded", false);
+}
+
+function matchSequence(sequence, node, index){
+  if (node == null || d3.select(node).datum().aoi != sequence[index].Name){
+    return false;
+  }
+  if (index == sequence.length -1 || matchSequence(sequence, node.nextSibling, index+1)){
+    d3.select(node).classed("sequence", true);
+    return true;
+  }
 }

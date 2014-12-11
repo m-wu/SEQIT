@@ -14,12 +14,26 @@
   opacity: 0;
 }
 
-.aoi.hovered{
+.aoi.hovered, .aoi.clickable{
   opacity: 1;
+}
+
+.aoi.clickable > rect{
+  opacity: 0.3;
 }
 
 .aoi.hovered > rect{
   opacity: 0.5;
+}
+
+.aoi.hovered.clickable > rect{
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.aoi.clickable.invalid > rect{
+  pointer-events: none;
+  cursor: no-drop;
 }
 
 .aoi.High > rect{
@@ -42,6 +56,72 @@
   fill: rgb(148, 103, 189);
 }
 
+.aoi-label {
+  pointer-events: none;
+}
+
+.seq-list > tr.hovered {
+  /*opacity: 1;*/
+  background-color: #f9f9f9;
+}
+
+.seq-list > tr.unselected {
+  opacity: 0.5;
+}
+
+.seq-list > tr > td {
+  text-align: center;
+}
+
+.seq-list > tr > td.seq-aoi {
+  color: white;
+  line-height: 40px;
+}
+
+.seq-list > tr > td.seq-empty {
+  border: 1px dashed gray;
+}
+
+.seq-list > tr > td.seq-edit {
+  vertical-align: middle;
+}
+
+.seq-list > tr > td.High{
+  background-color: rgb(214, 39, 40);
+}
+
+.seq-list > tr > td.Labels{
+  background-color: rgb(255, 127, 14);
+}
+
+.seq-list > tr > td.Legend{
+  background-color: rgb(44, 160, 44);
+}
+
+.seq-list > tr > td.Question{
+  background-color: rgb(31, 119, 180);
+}
+
+.seq-list > tr > td.Input{
+  background-color: rgb(148, 103, 189);
+}
+
+.seq-list > tr.unselected > td.seq-edit{
+  opacity: 0;
+}
+
+.seq-list > tr.hovered > td.seq-edit{
+  opacity: 1;
+}
+
+.fa-check-circle{
+  color: green;
+}
+
+.fa-times-circle{
+  color: red;
+}
+
 #timeline-control{
   margin-bottom: 10px;
 }
@@ -57,7 +137,7 @@ g.userchars rect{
   letter-spacing: 5px;
 }
 
-.fa-sort, .fa-sort-asc, .fa-sort-desc{
+.fa-sort, .fa-sort-asc, .fa-sort-desc, .fa-check-circle, .fa-times-circle{
   cursor: pointer;
 }
 
