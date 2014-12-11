@@ -428,7 +428,6 @@ function drawTimelineView(){
       .attr("class", timeline_label_class)
       .attr("width", timeline_label_width)
       .attr("x", timeline_chars_width)
-      .attr("dy", "-.15em")
       .attr("cursor", "default")
       .text(function(d) { 
         return "user "+d.user;
@@ -498,7 +497,7 @@ function setTimelineRowHeight(scale, timelinerows){
       .attr("transform", function(d,i){return "translate(0, "+scale(i)+")";})
 
     timelinerows.selectAll("text")
-      .attr("y", function(d, i, j){return scale.rangeBand(j)*.8})
+      .attr("y", function(d, i, j){return scale.rangeBand(j)})
 
     timelinerows.selectAll('rect')
       .attr("height", function(d, i, j){return scale.rangeBand(j)})
