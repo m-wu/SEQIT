@@ -15,21 +15,20 @@
   <body>
     <div class="container-fluid">
       <div class="page-header">
-        <h1>Eye Gaze Sequence Visualization</h1>
-        <p class="lead">Understand Your Eye Tracking Data</p>
+        <h1>SEQIT <small>Visualizing Eye Gaze Sequences</small></h1>        
       </div>
 
       <div class="row">
         <div class="col-md-4 mainviewcolumn">
           <div class="text-right" id="mainview-control">
-            Heatmap <input type="checkbox" id="heatmap-toggle" checked data-toggle="toggle" data-on="Show" data-off="Hide" data-onstyle="default" data-offstyle="default">
+            Heatmap <input type="checkbox" id="heatmap-toggle" data-toggle="toggle" data-on="Show" data-off="Hide" data-onstyle="default" data-offstyle="default" data-size="small">
           </div>
           <div id="mainview"></div>
           <div id="sequence-manager">
             <div class="panel panel-default">
               <div class="panel-body">
-                <span class="pull-right"><button id="new-seq-button" class="btn btn-default"><i class="fa fa-plus"></i> New sequence</button></span>
-                <h5>SEQUENCES</h5>
+                <span class="pull-right"><button id="new-seq-button" class="btn btn-default"><i class="fa fa-plus"></i> New pattern</button></span>
+                <h5>SEQUENCE PATTERNS</h5>
                 <table class="table seq-list"></table>                
               </div>
             </div>
@@ -37,7 +36,7 @@
         </div>
         <div class="col-md-8 timelinecolumn">
           <div class="row" id="timeline-control">
-            <div class="col-md-3" id="sorting-widgets">
+            <div class="col-xs-3" id="sorting-widgets">
               <div class="col-xs-4 header-sort">
                 <i class="fa fa-cogs"></i><i class="fa fa-sort" id="ps-sort"></i>
               </div>
@@ -48,7 +47,10 @@
                 <i class="fa fa-eye"></i><i class="fa fa-sort" id="visual-sort"></i>
               </div>
             </div>
-            <div class="col-md-9">
+            <div class="col-xs-6">
+              <div id="timeline-legend" class="row"></div>
+            </div>
+            <div class="col-xs-3">
               <span class="pull-right"><input type="checkbox" id="tl-abs-rel" checked data-toggle="toggle" data-on="Absolute" data-off="Relative" data-onstyle="default" data-offstyle="default" data-size="small"></span>
             </div>
           </div>

@@ -8,6 +8,7 @@
 
 .heatmap-canvas{
   pointer-events: none;
+  opacity: 0;
 }
 
 .aoi{
@@ -114,8 +115,13 @@
   opacity: 1;
 }
 
-.fa-check-circle{
+.fa-check-circle.enabled{
   color: green;
+  cursor: pointer;
+}
+
+.fa-check-circle.disabled{
+  color: gray;
 }
 
 .fa-times-circle{
@@ -126,8 +132,12 @@
   margin-bottom: 10px;
 }
 
-g.userchars rect{
+g.userchars > rect.value{
   fill: gray;
+}
+
+g.userchars > rect.ref{
+  fill: #f0f0f0;
 }
 
 .header-sort{
@@ -137,7 +147,7 @@ g.userchars rect{
   letter-spacing: 5px;
 }
 
-.fa-sort, .fa-sort-asc, .fa-sort-desc, .fa-check-circle, .fa-times-circle{
+.fa-sort, .fa-sort-asc, .fa-sort-desc, .fa-times-circle{
   cursor: pointer;
 }
 

@@ -6,8 +6,9 @@ var mainview_img_width    = 900.0;
 var mainview_img_height   = 719.0;
 var mainview_bg_opacity   = 0.5;
 
-var timeline_height       = 800;
+var timeline_height       = 860;
 var timeline_label_width  = 60;
+var timeline_legend_size  = 10;
 
 var zoom_ratio            = 0.7035; // image coordinate / fixation coordinate
 
@@ -231,11 +232,13 @@ function drawHeatmap(){
 
   $('#heatmap-toggle').change(function() {
       if ($(this).prop('checked')){
-        d3.select(".heatmap-canvas")
-          .classed("hidden", false)
+        d3.select(".heatmap-canvas")          
+          .transition()
+          .style("opacity", 0.6)
       } else {
         d3.select(".heatmap-canvas")
-          .classed("hidden", true)
+          .transition()
+          .style("opacity", 0)
       }
   })
 }
@@ -344,6 +347,7 @@ function drawAllScanPaths(){
 function drawTimelineView(){
   var timeline_width = parseInt(d3.select("#timelineview").style("width"));
   var timeline_chars_width = parseInt($("#sorting-widgets").width());
+  var timeline_legend_width = parseInt($("#timeline-legend").width());
 
   var mouseentered = false;
 
@@ -388,6 +392,36 @@ function drawTimelineView(){
   var colorScale = d3.scale.category10()
       .domain(aois.map(function(aoi){return aoi.Name;}));
 
+  // add legends to the timeline
+  var legends = d3.select("#timeline-legend")
+    .selectAll("div.legend")
+    .data(aois)
+    .enter()
+    .append("div")
+      .attr("class", "col-xs-2 legend")
+    .append("svg")
+      .attr("width", timeline_legend_width/6)
+      .attr("height", 30)
+    .append("g")
+      .attr("transform", "translate(0, 10)");
+
+  // add an offset of 2 columns to the first legend
+  d3.select("#timeline-legend")
+    .select("div.legend")
+    .classed("col-xs-offset-2", true);
+
+  legends.append("rect")
+    .attr("width", timeline_legend_size)
+    .attr("height", timeline_legend_size)
+    .attr("fill", function(d){
+      return colorScale(d.Name);
+    });
+
+  legends.append("text")
+    .text(function(d){return d.Name})
+    .attr("x", timeline_legend_size *1.5)
+    .attr("y", 10);
+
   var aoiTip = d3.tip()
       .attr('class', 'd3-tip')
       .offset([-10, 0])
@@ -428,7 +462,6 @@ function drawTimelineView(){
       .attr("class", timeline_label_class)
       .attr("width", timeline_label_width)
       .attr("x", timeline_chars_width)
-      .attr("dy", "-.15em")
       .attr("cursor", "default")
       .text(function(d) { 
         return "user "+d.user;
@@ -443,6 +476,9 @@ function drawTimelineView(){
       .attr("class", function(d){return "aoivisit "+d.aoi;})
       .attr("y", 0)
       .style("fill", function(d){
+        if (d.aoi == "None"){
+          return "lightgray";
+        }
         return colorScale(d.aoi);
       })
       .on('mouseover', aoiTip.show)
@@ -462,13 +498,22 @@ function drawTimelineView(){
 
 function drawUserCharBars(parent, timeline_chars_width){
   timeline_char_width = timeline_chars_width / 3;
-  timeline_char_height = timeline_char_width * 0.9;
+  timeline_char_height = timeline_char_width * 0.95;
 
   psScale = d3.scale.linear()
       .domain([getMinDomain(min_ps_value, max_ps_value), max_ps_value])
       .range([0, timeline_char_height]);
 
+  parent.selectAll("rect.ref")
+      .data([0,1,2])
+      .enter()
+      .append("rect")
+      .attr("class", "ref")
+      .attr("x", function(d){return timeline_char_width * d;})
+      .attr("width", timeline_char_height);
+
   parent.append("rect")
+      .attr("class", "value")
       .attr("x", 0)
       .attr("width", function(d){return psScale(userchars[d.user].ps_score_value)});
 
@@ -477,6 +522,7 @@ function drawUserCharBars(parent, timeline_chars_width){
       .range([0, timeline_char_height]);
 
   parent.append("rect")
+      .attr("class", "value")
       .attr("x", timeline_char_width)
       .attr("width", function(d){return verbalScale(userchars[d.user].verbal_score_value)});
 
@@ -485,6 +531,7 @@ function drawUserCharBars(parent, timeline_chars_width){
       .range([0, timeline_char_height]);
 
   parent.append("rect")
+      .attr("class", "value")
       .attr("x", timeline_char_width*2)
       .attr("width", function(d){return visualScale(userchars[d.user].visual_score_value)});
 }
@@ -498,7 +545,7 @@ function setTimelineRowHeight(scale, timelinerows){
       .attr("transform", function(d,i){return "translate(0, "+scale(i)+")";})
 
     timelinerows.selectAll("text")
-      .attr("y", function(d, i, j){return scale.rangeBand(j)*.8})
+      .attr("y", function(d, i, j){return scale.rangeBand(j)})
 
     timelinerows.selectAll('rect')
       .attr("height", function(d, i, j){return scale.rangeBand(j)})
@@ -647,7 +694,11 @@ function initSequenceControls(){
 }
 
 function createNewSequenceRow(){
-  var row = d3.select(".seq-list").append("tr");
+  var row = d3.select(".seq-list")
+    .selectAll("tr")
+    .data(definedSequences)
+    .enter()
+    .append("tr");
 
   for (var i = 0; i < maxSequenceLength; i++){
     row.append("td").attr("class", "col-xs-2 seq-empty");
@@ -658,8 +709,12 @@ function createNewSequenceRow(){
 
   // the green checkmark "done" button
   seq_edit_cell.append('i')
-    .attr("class", "fa fa-check-circle")
+    .attr("class", "fa fa-check-circle disabled")
     .on("click", function(){
+      if (currentSequence.length == 0){
+        return;
+      }
+
       seq_edit_cell.select(".fa-check-circle").remove();
 
       currentSequenceRow
@@ -676,39 +731,57 @@ function createNewSequenceRow(){
           d3.selectAll("rect.sequence").classed("sequence", false);
         });
 
-      currentSequence = null;
-      currentSequenceRow = null;
-      d3.select("#new-seq-button").attr("disabled", null);
-      d3.selectAll("g.aoi").classed("clickable", false);
-      d3.select("g.aoi.invalid").classed("invalid", false);
-      d3.selectAll("rect.sequence").classed("sequence", false);
-      d3.selectAll("rect.aoivisit").classed("faded", false);
-      d3.selectAll("td.seq-empty").classed("seq-empty", false);
+      exitPatternEditing();
     });
 
   seq_edit_cell.append("i")
     .attr("class", "fa fa-times-circle")
     .on("click", function(d, i, j){
-      console.log(this.parentNode.parentNode);
+      exitPatternEditing();
+      definedSequences.splice(i, 1);
+      updateSequencePatternList();
     });
 
   return row;
 }
 
+function exitPatternEditing(){
+  currentSequence = null;
+  currentSequenceRow = null;
+  d3.select("#new-seq-button").attr("disabled", null);
+  d3.selectAll("g.aoi").classed("clickable", false);
+  d3.select("g.aoi.invalid").classed("invalid", false);
+  d3.selectAll("rect.sequence").classed("sequence", false);
+  d3.selectAll("rect.aoivisit").classed("faded", false);
+  d3.selectAll("td.seq-empty").classed("seq-empty", false);
+}
+
 function addAOIToSequence(aoi){
+  currentSequenceRow.select(".seq-edit")
+    .select(".fa-check-circle")
+    .attr("class", "fa fa-check-circle enabled");
+
   if (currentSequence.length >= maxSequenceLength){
     return;
   }
-
   currentSequence.push(aoi);
+  updateSequencePatternList();
+}
 
-  d3.select(".seq-list").selectAll("tr")
-    .data(definedSequences)
-    .selectAll("td")
+function updateSequencePatternList(){
+  patternRows = d3.select(".seq-list").selectAll("tr").data(definedSequences);
+
+  patternRows.selectAll("td")
     .data(function(d) {return d;})
     .attr("class", function(d){
       return "col-xs-2 seq-aoi "+d.Name})
     .text(function(d){return d.Name;});
+
+  patternRows.selectAll("td.seq-aoi").data(function(d) {return d;}).exit()
+    .attr("class", "col-xs-2")
+    .text("");
+
+  patternRows.exit().remove();
 }
 
 function showSequenceInTimeline(sequence){
